@@ -1,0 +1,43 @@
+name: "Auto Labeler"
+description: "Automatically labels pull requests by size, changed file type, and (as a fallback) AI-suggested type — with proper colors, using free GitHub Models"
+author: "muhammedshibilm"
+
+branding:
+  icon: "tag"
+  color: "green"
+
+inputs:
+  model:
+    description: "GitHub Models model used for the fallback type label"
+    required: false
+    default: "openai/gpt-4o-mini"
+  enable_ai_fallback:
+    description: "If false, skips the AI-suggested type label entirely (pure rule-based labeling only)"
+    required: false
+    default: "true"
+  github_token:
+    description: "GitHub token used to read PR info, create labels, and apply them"
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install requests
+
+    - name: Run auto-labeler
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+        MODEL: ${{ inputs.model }}
+        ENABLE_AI_FALLBACK: ${{ inputs.enable_ai_fallback }}
+      run: python ${{ github.action_path }}/scripts/auto_label.py
